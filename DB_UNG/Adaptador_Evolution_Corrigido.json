@@ -1,0 +1,83 @@
+﻿{
+    "name":  "Adaptador Evolution -\u003e Bot UNIFAG",
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "evolution-in",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  2,
+                      "position":  [
+                                       250,
+                                       300
+                                   ],
+                      "id":  "evo-webhook",
+                      "name":  "Webhook Evolution"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const body = $json.body || $json;\n\n// 1. Filtrar eventos (aceita messages.upsert, messages-upsert, MESSAGES_UPSERT ou se event nao vier informado)\nconst event = String(body.event || \u0027\u0027).toLowerCase();\nif (event \u0026\u0026 !event.includes(\u0027upsert\u0027)) {\n  return []; // Ignora updates de entrega (delivered, read), presence, etc.\n}\n\n// 2. Tratar data como objeto ou array\nlet data = body.data || body;\nif (Array.isArray(data)) {\n  if (data.length === 0) return [];\n  data = data[0];\n}\n\nconst key = data.key || {};\n\n// 3. Ignorar terminantemente se a mensagem foi enviada pelo proprio bot (fromMe)\nif (key.fromMe === true || String(key.fromMe) === \u0027true\u0027 || data.fromMe === true) {\n  return [];\n}\n\n// 4. Ignorar mensagens de grupos ou status do WhatsApp\nconst remoteJid = key.remoteJid || data.remoteJid || \u0027\u0027;\nif (!remoteJid || remoteJid.includes(\u0027@g.us\u0027) || remoteJid.includes(\u0027status@broadcast\u0027)) {\n  return [];\n}\n\n// 5. Extrair texto real da mensagem em todos os formatos possiveis\nconst msg = data.message || {};\nconst text = \n  msg.conversation ||\n  msg.extendedTextMessage?.text ||\n  msg.buttonsResponseMessage?.selectedDisplayText ||\n  msg.listResponseMessage?.title ||\n  msg.imageMessage?.caption ||\n  msg.videoMessage?.caption ||\n  data.body ||\n  \u0027\u0027;\n\n// 6. Se nao houver texto digitado (status, aviso de leitura), nao processa\nif (!text || !String(text).trim()) {\n  return [];\n}\n\n// 7. Extrair dados limpos\nconst wa_id = remoteJid.replace(/@.*$/, \u0027\u0027).replace(/\\D/g, \u0027\u0027);\nconst message_id = key.id || data.id || `evo_${Date.now()}`;\nconst timestamp = String(data.messageTimestamp || Math.floor(Date.now() / 1000));\nconst profile_name = data.pushName || wa_id;\nconst phone_number_id = (data.owner || \"\").replace(/\\D/g, \u0027\u0027) || \"897759766750800\";\n\nreturn [{\n  json: {\n    event_classification: \"inbound_customer_message\",\n    wa_id: wa_id,\n    phone_number_id: phone_number_id,\n    profile_name: profile_name,\n    text: String(text).trim(),\n    message_id: message_id,\n    timestamp: timestamp,\n    type: \"text\",\n    data: {\n      key: {\n        fromMe: false\n      }\n    },\n    meta_raw: body\n  }\n}];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       500,
+                                       300
+                                   ],
+                      "id":  "evo-transformer",
+                      "name":  "Traduzir Evolution para Meta"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://n8n.agrovendas.cloud/webhook/wa-bot-in",
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ JSON.stringify($json) }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       750,
+                                       300
+                                   ],
+                      "id":  "evo-forward",
+                      "name":  "Encaminhar para Fluxo Principal"
+                  }
+              ],
+    "connections":  {
+                        "Webhook Evolution":  {
+                                                  "main":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "Traduzir Evolution para Meta",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ]
+                                                           ]
+                                              },
+                        "Traduzir Evolution para Meta":  {
+                                                             "main":  [
+                                                                          [
+                                                                              {
+                                                                                  "node":  "Encaminhar para Fluxo Principal",
+                                                                                  "type":  "main",
+                                                                                  "index":  0
+                                                                              }
+                                                                          ]
+                                                                      ]
+                                                         }
+                    },
+    "active":  true,
+    "settings":  {
+                     "executionOrder":  "v1"
+                 }
+}

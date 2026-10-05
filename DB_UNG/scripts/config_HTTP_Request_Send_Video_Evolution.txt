@@ -1,0 +1,32 @@
+CONFIGURAÇÃO DO NÓ: HTTP Request - Send Video (Evolution API)
+==============================================================
+
+1. URL:
+http://179.197.231.106:8085/message/sendMedia/Disparo
+
+2. Method:
+POST
+
+3. Authentication:
+None
+
+4. Send Headers: (ON)
+- apikey: 504B576EA0D2-49CD-AFFB-1456E11F993D
+- Content-Type: application/json
+
+5. Send Body: (ON)
+- Body Content Type: JSON
+- Specify Body: Using JSON
+
+6. JSON Body:
+{{ JSON.stringify({
+  number: $json.wa_id,
+  mediatype: "video",
+  mimetype: "video/mp4",
+  caption: $json.bot_text,
+  media: "https://videos.automatizeonline.com.br/palestra_voluntarios_16mb.mp4",
+  fileName: "palestra_voluntarios_16mb.mp4"
+}) }}
+
+7. Options:
+- Timeout: 60000 (ou 120000)

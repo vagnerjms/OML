@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: unifag_bot_postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-unifag_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-unifag_bot_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-unifag_bot}
+    volumes:
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+      - unifag_postgres_data:/var/lib/postgresql/data
+    networks:
+      - unifag_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-unifag_admin} -d ${POSTGRES_DB:-unifag_bot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    image: mysql:8.0
+    container_name: bot_control_mysql
+    restart: unless-stopped
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-bot_control_root_2026}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-bot_control}
+      MYSQL_USER: ${MYSQL_USER:-bot_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-bot_control_pass_2026}
+    volumes:
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+      - bot_control_mysql_data:/var/lib/mysql
+    networks:
+      - unifag_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-bot_control_root_2026}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  unifag_postgres_data:
+    name: unifag_postgres_data
+  bot_control_mysql_data:
+    name: bot_control_mysql_data
+
+networks:
+  unifag_net:
+    name: unifag_net
+    driver: bridge

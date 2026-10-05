@@ -1,0 +1,89 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: unifag_bot_postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-unifag_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-unifag_bot_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-unifag_bot}
+    volumes:
+      - ./DB_UNG/postgres/init:/docker-entrypoint-initdb.d:ro
+      - unifag_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-unifag_admin} -d ${POSTGRES_DB:-unifag_bot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    image: mysql:8.0
+    container_name: bot_control_mysql
+    restart: unless-stopped
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-bot_control_root_2026}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-bot_control}
+      MYSQL_USER: ${MYSQL_USER:-bot_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-bot_control_pass_2026}
+    volumes:
+      - ./DB_UNG/mysql/init:/docker-entrypoint-initdb.d:ro
+      - bot_control_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-bot_control_root_2026}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  wa_gateway:
+    build:
+      context: ./wa_gateway
+      dockerfile: Dockerfile
+    container_name: wa_gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8088}:8088"
+    volumes:
+      - ./wa_gateway/media-cache:/app/media-cache
+    environment:
+      PORT: 8088
+      NODE_ENV: production
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+      VERIFY_TOKEN: ${VERIFY_TOKEN:-usf_verify_token_seguro_2026}
+      N8N_BOT_URL: ${N8N_BOT_URL:-}
+      N8N_STATUS_URL: ${N8N_STATUS_URL:-}
+      OML_API_BASE_URL: ${OML_API_BASE_URL:-https://nginx}
+      OML_HANDOFF_URL: ${OML_HANDOFF_URL:-https://nginx/webhooks/whatsapp/incoming/}
+      OML_USERNAME: ${OML_USERNAME:-admin}
+      OML_PASSWORD: ${OML_PASSWORD:-admin}
+      OML_TRUNK_CAMPAIGN_ID: ${OML_TRUNK_CAMPAIGN_ID:-111}
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:-unifag_bot}
+      PGUSER: ${POSTGRES_USER:-unifag_admin}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-unifag_bot_pass_2026}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-bot_control}
+      MYSQL_USER: ${MYSQL_USER:-bot_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-bot_control_pass_2026}
+      MEDIA_CACHE_DIR: /app/media-cache
+      MEDIA_LINK_TTL_HOURS: 168
+      PUBLIC_WEBHOOK_BASE_URL: ${PUBLIC_WEBHOOK_BASE_URL:-http://localhost:8088}
+      WEBHOOK_WATCHDOG_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+volumes:
+  unifag_postgres_data:
+  bot_control_mysql_data:
