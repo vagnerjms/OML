@@ -1,0 +1,14 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Gateway media cache
+wa_gateway/media-cache/*
+!wa_gateway/media-cache/.gitkeep
+
+# Logs and runtime data
+*.log
+.DS_Store
+Thumbs.db

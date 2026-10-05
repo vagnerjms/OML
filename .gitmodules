@@ -1,0 +1,7 @@
+[submodule "DB_UNG"]
+	path = DB_UNG
+	url = https://github.com/vagnerjms/DB_UNG.git
+[submodule "omldeploytool"]
+	path = omldeploytool
+	url = https://github.com/Freetech-Solutions/omldeploytool.git
+	ignore = dirty
