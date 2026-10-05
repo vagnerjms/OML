@@ -1,0 +1,17 @@
+{
+  "name": "wa-gateway",
+  "version": "1.0.0",
+  "description": "Gateway de Orquestracao WhatsApp Meta, OMNiLeads e n8n",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "mysql2": "^3.11.3",
+    "pg": "^8.13.0"
+  }
+}

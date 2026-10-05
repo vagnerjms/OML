@@ -1,0 +1,44 @@
+services:
+  wa_gateway:
+    build: .
+    container_name: wa_gateway
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./media-cache:/app/media-cache
+    environment:
+      PORT: 8088
+      NODE_ENV: production
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+      VERIFY_TOKEN: ${VERIFY_TOKEN:-usf_verify_token_seguro_2026}
+      N8N_BOT_URL: ${N8N_BOT_URL:-}
+      N8N_STATUS_URL: ${N8N_STATUS_URL:-}
+      OML_API_BASE_URL: ${OML_API_BASE_URL:-https://nginx}
+      OML_HANDOFF_URL: ${OML_HANDOFF_URL:-https://nginx/webhooks/whatsapp/incoming/}
+      OML_USERNAME: ${OML_USERNAME:-admin}
+      OML_PASSWORD: ${OML_PASSWORD:-admin}
+      OML_TRUNK_CAMPAIGN_ID: ${OML_TRUNK_CAMPAIGN_ID:-111}
+      PGHOST: unifag_bot_postgres
+      PGPORT: 5432
+      PGDATABASE: unifag_bot
+      PGUSER: unifag_admin
+      PGPASSWORD: unifag_bot_pass_2026
+      MYSQL_HOST: bot_control_mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: bot_control
+      MYSQL_USER: bot_user
+      MYSQL_PASSWORD: bot_control_pass_2026
+      MEDIA_CACHE_DIR: /app/media-cache
+      MEDIA_LINK_TTL_HOURS: 168
+      PUBLIC_WEBHOOK_BASE_URL: ${PUBLIC_WEBHOOK_BASE_URL:-http://localhost:8088}
+      WEBHOOK_WATCHDOG_ENABLED: "false"
+    networks:
+      - unifag_net
+      - test-env_omnileads
+
+networks:
+  unifag_net:
+    external: true
+  test-env_omnileads:
+    external: true
